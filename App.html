@@ -1,0 +1,2386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lebanon Sports Hub - Interactive Map & Events with Pricing</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        /* Reset & Base */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        :root {
+            --primary: #ed1c24;
+            --secondary: #00a651;
+            --dark: #1a1a1a;
+            --light: #f5f5f5;
+            --gray: #777;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --card-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+            --registered: #4CAF50;
+            --free: #2196F3;
+            --premium: #FF9800;
+            --map-primary: #2c3e50;
+        }
+        
+        body {
+            background-color: #f9f9f9;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+        
+        /* Header */
+        header {
+            background: white;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            padding: 15px 0;
+        }
+        
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+        
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .logo i {
+            color: var(--secondary);
+        }
+        
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            gap: 25px;
+        }
+        
+        .nav-menu a {
+            text-decoration: none;
+            color: var(--dark);
+            font-weight: 600;
+            transition: color 0.3s;
+        }
+        
+        .nav-menu a:hover {
+            color: var(--primary);
+        }
+        
+        .auth-buttons button {
+            padding: 8px 20px;
+            border-radius: 4px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .sign-in {
+            background: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+            margin-right: 10px;
+        }
+        
+        .sign-up {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .auth-buttons button:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+        
+        /* Hero */
+        .hero {
+            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), 
+                        url('https://images.unsplash.com/photo-1461896836934-ffe607ba8211?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80');
+            background-size: cover;
+            background-position: center;
+            color: white;
+            padding: 80px 0;
+            text-align: center;
+        }
+        
+        .hero h1 {
+            font-size: 2.8rem;
+            margin-bottom: 20px;
+        }
+        
+        .hero p {
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin: 0 auto 30px;
+            opacity: 0.9;
+        }
+        
+        .price-filter {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 30px;
+        }
+        
+        .price-filter-btn {
+            padding: 8px 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .price-filter-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        
+        .price-filter-btn:hover {
+            background: var(--primary);
+        }
+        
+        .cta-button {
+            background: var(--primary);
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .cta-button:hover {
+            background: #c5161c;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        
+        /* Interactive Map */
+        .map-section {
+            background: white;
+            padding: 60px 0;
+            margin: 40px 0;
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+        }
+        
+        .map-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .map-controls {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .map-btn {
+            padding: 10px 20px;
+            background: var(--light);
+            border: 2px solid var(--primary);
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .map-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        #lebanonMap {
+            height: 500px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+        }
+        
+        .map-search {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .map-search input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        
+        .map-search button {
+            padding: 12px 25px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        /* Events */
+        .section-title {
+            text-align: center;
+            margin: 60px 0 40px;
+            color: var(--dark);
+            font-size: 2.2rem;
+        }
+        
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 40px;
+        }
+        
+        .filter-btn {
+            padding: 10px 25px;
+            background: var(--light);
+            border: none;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .filter-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .filter-btn:hover {
+            background: var(--secondary);
+            color: white;
+        }
+        
+        .price-tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-left: 10px;
+        }
+        
+        .price-free {
+            background: var(--free);
+            color: white;
+        }
+        
+        .price-budget {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .price-moderate {
+            background: var(--premium);
+            color: white;
+        }
+        
+        .price-premium {
+            background: #9C27B0;
+            color: white;
+        }
+        
+        .events-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 60px;
+        }
+        
+        .event-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .event-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+        }
+        
+        .event-card.registered {
+            border-left: 5px solid var(--registered);
+        }
+        
+        .event-image {
+            height: 200px;
+            width: 100%;
+            object-fit: cover;
+        }
+        
+        .event-content {
+            padding: 25px;
+        }
+        
+        .event-category {
+            display: inline-block;
+            background: var(--secondary);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        
+        .event-title {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+            color: var(--dark);
+        }
+        
+        .event-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 15px;
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+        
+        .event-meta i {
+            color: var(--primary);
+            margin-right: 5px;
+        }
+        
+        .event-price {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 3px solid var(--primary);
+        }
+        
+        .price-label {
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .price-amount {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .event-description {
+            color: var(--gray);
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        
+        .event-location {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 3px solid var(--secondary);
+        }
+        
+        .event-location i {
+            color: var(--secondary);
+            margin-right: 10px;
+        }
+        
+        .event-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .register-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .register-btn.registered {
+            background: var(--registered);
+        }
+        
+        .register-btn:hover {
+            background: #c5161c;
+        }
+        
+        .register-btn.registered:hover {
+            background: #388e3c;
+        }
+        
+        .view-map-btn {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        .view-map-btn:hover {
+            background: #008f47;
+        }
+        
+        /* My Events */
+        .my-events {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 60px 0;
+            margin: 40px 0;
+            border-radius: 15px;
+        }
+        
+        .my-events-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .events-count {
+            background: var(--primary);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        
+        .registered-events-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+        }
+        
+        .registered-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+            position: relative;
+            border-left: 5px solid var(--registered);
+        }
+        
+        .registered-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: var(--registered);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .registered-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .cancel-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            flex: 1;
+        }
+        
+        .cancel-btn:hover {
+            background: #ff5252;
+        }
+        
+        .directions-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            flex: 1;
+        }
+        
+        .directions-btn:hover {
+            background: #c5161c;
+        }
+        
+        .no-events {
+            text-align: center;
+            padding: 60px;
+            color: var(--gray);
+        }
+        
+        .no-events i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            color: #ddd;
+        }
+        
+        /* Chatbot */
+        .chatbot-container {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1000;
+        }
+        
+        .chatbot-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(237, 28, 36, 0.4);
+            transition: all 0.3s;
+        }
+        
+        .chatbot-btn:hover {
+            transform: scale(1.1);
+            background: #c5161c;
+        }
+        
+        .chatbot-window {
+            position: absolute;
+            bottom: 80px;
+            right: 0;
+            width: 350px;
+            height: 450px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .chatbot-header {
+            background: var(--primary);
+            color: white;
+            padding: 20px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .chatbot-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            line-height: 1.4;
+        }
+        
+        .bot-message {
+            background: #f0f2f5;
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+        }
+        
+        .user-message {
+            background: var(--primary);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 5px;
+        }
+        
+        .chatbot-input {
+            padding: 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .chatbot-input input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            font-size: 0.95rem;
+        }
+        
+        .send-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        /* Modals */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: var(--shadow);
+        }
+        
+        .modal h2 {
+            margin-bottom: 25px;
+            text-align: center;
+            color: var(--dark);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .submit-btn:hover {
+            background: #c5161c;
+        }
+        
+        .toggle-auth {
+            text-align: center;
+            margin-top: 20px;
+            color: var(--gray);
+        }
+        
+        .toggle-auth span {
+            color: var(--primary);
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .close-modal {
+            float: right;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray);
+        }
+        
+        /* Footer */
+        footer {
+            background: var(--dark);
+            color: white;
+            padding: 60px 0 30px;
+        }
+        
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+        
+        .footer-section h3 {
+            margin-bottom: 20px;
+            color: white;
+        }
+        
+        .social-icons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .social-icons a {
+            color: white;
+            font-size: 1.2rem;
+        }
+        
+        .copyright {
+            text-align: center;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.7);
+        }
+        
+        /* Map Popup */
+        .map-popup {
+            padding: 10px;
+            max-width: 250px;
+        }
+        
+        .map-popup h3 {
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+        
+        .map-popup .category {
+            display: inline-block;
+            background: var(--secondary);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+        }
+        
+        .map-popup-price {
+            background: #f8f9fa;
+            padding: 8px 12px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        /* Map Legend */
+        .map-legend {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            font-size: 0.8rem;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        
+        .legend-color {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        /* Price Stats */
+        .price-stats {
+            display: flex;
+            justify-content: space-around;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 30px 0;
+            box-shadow: var(--shadow);
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .stat-label {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-menu {
+                display: none;
+            }
+            
+            .hero h1 {
+                font-size: 2.2rem;
+            }
+            
+            .events-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .chatbot-window {
+                width: 300px;
+                height: 400px;
+                right: 20px;
+            }
+            
+            .my-events-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+            
+            .map-header {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .map-controls {
+                flex-wrap: wrap;
+            }
+            
+            #lebanonMap {
+                height: 400px;
+            }
+            
+            .price-stats {
+                flex-direction: column;
+                gap: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="nav-container">
+                <div class="logo">
+                    <i class="fas fa-running"></i>
+                    <span>Lebanon Sports Hub</span>
+                </div>
+                <ul class="nav-menu">
+                    <li><a href="#home">Home</a></li>
+                    <li><a href="#map">Interactive Map</a></li>
+                    <li><a href="#my-events">My Events</a></li>
+                    <li><a href="#events">All Events</a></li>
+                </ul>
+                <div class="auth-buttons">
+                    <button class="sign-in" id="signInBtn">Sign In</button>
+                    <button class="sign-up" id="signUpBtn">Sign Up</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero" id="home">
+        <div class="container">
+            <h1>Discover & Join Sports Events Across Lebanon</h1>
+            <p>Interactive map with real locations. Register for events. Track your participation.</p>
+            
+            <div class="price-filter">
+                <button class="price-filter-btn active" data-price="all">All Prices</button>
+                <button class="price-filter-btn" data-price="free">Free Events</button>
+                <button class="price-filter-btn" data-price="budget">Budget ($1-$20)</button>
+                <button class="price-filter-btn" data-price="moderate">Moderate ($21-$50)</button>
+                <button class="price-filter-btn" data-price="premium">Premium ($51+)</button>
+            </div>
+            
+            <button class="cta-button" id="exploreEvents">View Interactive Map</button>
+        </div>
+    </section>
+
+    <!-- Interactive Map -->
+    <section class="map-section" id="map">
+        <div class="container">
+            <div class="map-header">
+                <h2 class="section-title">Interactive Lebanon Sports Map</h2>
+                <div class="map-controls">
+                    <button class="map-btn active" id="showAll">All Events</button>
+                    <button class="map-btn" id="showRegistered">My Events</button>
+                    <button class="map-btn" id="locateMe">
+                        <i class="fas fa-location-arrow"></i> My Location
+                    </button>
+                </div>
+            </div>
+            
+            <div id="lebanonMap"></div>
+            
+            <div class="map-search">
+                <input type="text" id="mapSearch" placeholder="Search for a city or event in Lebanon...">
+                <button id="searchBtn">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- My Events -->
+    <section class="my-events" id="my-events">
+        <div class="container">
+            <div class="my-events-header">
+                <h2 class="section-title">My Registered Events</h2>
+                <div class="events-count" id="eventsCount">0 Events</div>
+            </div>
+            
+            <div class="registered-events-grid" id="registeredEvents">
+                <div class="no-events" id="noEventsMessage">
+                    <i class="fas fa-calendar-plus"></i>
+                    <h3>No Events Registered Yet</h3>
+                    <p>Browse events below and click "Register" to add them here!</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Price Statistics -->
+    <div class="container">
+        <div class="price-stats">
+            <div class="stat-item">
+                <div class="stat-value" id="freeEventsCount">0</div>
+                <div class="stat-label">Free Events</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="avgPrice">$0</div>
+                <div class="stat-label">Average Price</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="eventsUnder20">0</div>
+                <div class="stat-label">Events Under $20</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="totalValue">$0</div>
+                <div class="stat-label">Your Events Value</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- All Events -->
+    <section id="events">
+        <div class="container">
+            <h2 class="section-title">Upcoming Sports Events with Pricing</h2>
+            
+            <div class="filters">
+                <button class="filter-btn active" data-location="all">All Lebanon</button>
+                <button class="filter-btn" data-location="beirut">Beirut</button>
+                <button class="filter-btn" data-location="tripoli">Tripoli</button>
+                <button class="filter-btn" data-location="byblos">Byblos</button>
+                <button class="filter-btn" data-location="sidon">Sidon</button>
+                <button class="filter-btn" data-location="tyre">Tyre</button>
+                <button class="filter-btn" data-location="baalbek">Baalbek</button>
+                <button class="filter-btn" data-location="jounieh">Jounieh</button>
+                <button class="filter-btn" data-location="faraya">Faraya</button>
+            </div>
+            
+            <div class="events-grid" id="eventsGrid">
+                <!-- Events loaded here -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Lebanon Sports Hub</h3>
+                    <p>Your gateway to sports events across Lebanon. Find, join, and enjoy!</p>
+                    <div class="social-icons">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h3>Quick Links</h3>
+                    <p><a href="#home" style="color:white;">Home</a></p>
+                    <p><a href="#map" style="color:white;">Interactive Map</a></p>
+                    <p><a href="#my-events" style="color:white;">My Events</a></p>
+                    <p><a href="#events" style="color:white;">All Events</a></p>
+                </div>
+                <div class="footer-section">
+                    <h3>Contact</h3>
+                    <p><i class="fas fa-map-marker-alt"></i> Beirut, Lebanon</p>
+                    <p><i class="fas fa-phone"></i> +961 1 234 567</p>
+                    <p><i class="fas fa-envelope"></i> info@lebanonsportshub.com</p>
+                </div>
+            </div>
+            <div class="copyright">
+                <p>&copy; 2023 Lebanon Sports Hub. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Sign In Modal -->
+    <div class="modal" id="signInModal">
+        <div class="modal-content">
+            <span class="close-modal" id="closeSignIn">&times;</span>
+            <h2>Sign In</h2>
+            <form id="signInForm">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="loginEmail" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="submit-btn">Sign In</button>
+            </form>
+            <p class="toggle-auth">Don't have an account? <span id="showSignUp">Sign Up</span></p>
+        </div>
+    </div>
+
+    <!-- Sign Up Modal -->
+    <div class="modal" id="signUpModal">
+        <div class="modal-content">
+            <span class="close-modal" id="closeSignUp">&times;</span>
+            <h2>Sign Up</h2>
+            <form id="signUpForm">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="signupName" placeholder="Enter your name" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="signupEmail" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="signupPassword" placeholder="Create a password" required>
+                </div>
+                <button type="submit" class="submit-btn">Create Account</button>
+            </form>
+            <p class="toggle-auth">Already have an account? <span id="showSignIn">Sign In</span></p>
+        </div>
+    </div>
+
+
+    <!-- Chatbot -->
+    <div class="chatbot-container">
+        <button class="chatbot-btn" id="chatbotBtn">
+            <i class="fas fa-robot"></i>
+        </button>
+        <div class="chatbot-window" id="chatbotWindow">
+            <div class="chatbot-header">
+                <span>Sports Assistant</span>
+                <i class="fas fa-times" id="closeChatbot"></i>
+            </div>
+            <div class="chatbot-messages" id="chatbotMessages">
+                <div class="message bot-message">
+                    Hello! I can help you find events on the map, compare prices, manage registrations, and answer questions!
+                </div>
+            </div>
+            <div class="chatbot-input">
+                <input type="text" id="chatInput" placeholder="Ask about prices, events, or locations...">
+                <button class="send-btn" id="sendChat"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+    
+    
+ 
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        // EXTENSIVE SPORTS EVENTS DATA WITH PRICING
+        const sportsEvents = [
+            // BEIRUT EVENTS
+            {
+                id: 1,
+                title: "Beirut International Marathon",
+                category: "Running",
+                location: "Beirut",
+                date: "Nov 19, 2026",
+                time: "7:00 AM",
+                image: "https://images.unsplash.com/photo-1552674605-db6ffd8facb5?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+                description: "The biggest marathon in Lebanon with thousands of participants from around the world. Choose from full marathon, half marathon, or 10K.",
+                registered: 2850,
+                capacity: 10000,
+                venue: "Martyr's Square",
+                exactLocation: "Starting at Martyr's Square, route through Downtown Beirut",
+                coordinates: [33.8938, 35.5018],
+                price: 50,
+                priceType: "premium",
+                priceDisplay: "$50"
+            },
+            {
+                id: 2,
+                title: "Beirut Basketball Street Tournament",
+                category: "Basketball",
+                location: "Beirut",
+                date: "Dec 5, 2026",
+                time: "2:00 PM",
+                image: "https://images.unsplash.com/photo-1546519638-68e109498ffc?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+                description: "3x3 street basketball tournament featuring local and international teams. Cash prizes for winners.",
+                registered: 42,
+                capacity: 64,
+                venue: "Zaitunay Bay",
+                exactLocation: "Zaitunay Bay Sports Courts, Beirut Waterfront",
+                coordinates: [33.8959, 35.4785],
+                price: 20,
+                priceType: "budget",
+                priceDisplay: "$20 per team"
+            },
+            {
+                id: 3,
+                title: "Beirut Yoga Festival",
+                category: "Yoga",
+                location: "Beirut",
+                date: "Nov 25, 2026",
+                time: "8:00 AM",
+                image: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+                description: "Day-long yoga festival with multiple sessions, workshops, meditation, and wellness activities.",
+                registered: 120,
+                capacity: 300,
+                venue: "Horsh Beirut",
+                exactLocation: "Horsh Beirut Public Park",
+                coordinates: [33.8708, 35.5089],
+                price: 30,
+                priceType: "moderate",
+                priceDisplay: "$30"
+            },
+            {
+                id: 4,
+                title: "Beirut Tennis Open",
+                category: "Tennis",
+                location: "Beirut",
+                date: "Dec 10, 2026",
+                time: "9:00 AM",
+                image: "https://images.unsplash.com/photo-1622279457486-62dcc4a431a7?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+                description: "Annual tennis tournament for amateur and semi-professional players. Multiple categories available.",
+                registered: 65,
+                capacity: 128,
+                venue: "Beirut Tennis Club",
+                exactLocation: "Beirut Tennis Club, Rawcheh",
+                coordinates: [33.8881, 35.4819],
+                price: 40,
+                priceType: "moderate",
+                priceDisplay: "$40"
+            },
+            
+            // TRIPOLI EVENTS
+            {
+                id: 5,
+                title: "Tripoli Football Championship",
+                category: "Football",
+                location: "Tripoli",
+                date: "Dec 10, 2026",
+                time: "4:00 PM",
+                image: "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+                description: "North Lebanon football championship with teams from across the region. Family-friendly event.",
+                registered: 320,
+                capacity: 1000,
+                venue: "Tripoli Municipal Stadium",
+                exactLocation: "Al Mina Road, Tripoli",
+                coordinates: [34.4367, 35.8497],
+                price: 15,
+                priceType: "budget",
+                priceDisplay: "$15"
+            },
+            {
+                id: 6,
+                title: "Tripoli Traditional Wrestling",
+                category: "Wrestling",
+                location: "Tripoli",
+                date: "Nov 30, 2026",
+                time: "6:00 PM",
+                image: "https://images.unsplash.com/photo-1533750349088-cd871a92f312?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+                description: "Traditional Lebanese wrestling competition in Tripoli's old city. Cultural heritage event.",
+                registered: 28,
+                capacity: 50,
+                venue: "Tripoli Citadel Square",
+                exactLocation: "Tripoli Citadel, Old City",
+                coordinates: [34.4360, 35.8439],
+                price: 0,
+                priceType: "free",
+                priceDisplay: "FREE"
+            },
+            
+            // BYBLOS EVENTS
+            {
+                id: 7,
+                title: "Byblos Coastal Run",
+                category: "Running",
+                location: "Byblos",
+                date: "Nov 25, 2026",
+                time: "6:30 AM",
+                image: "https://images.unsplash.com/photo-1519861531473-920034658307?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+                description: "Scenic 10K run along the beautiful Byblos coastline. Perfect for beginners and experienced runners.",
+                registered: 185,
+                capacity: 500,
+                venue: "Byblos Harbor",
+                exactLocation: "Starting at Byblos Fishing Port",
+                coordinates: [34.1191, 35.6497],
+                price: 25,
+                priceType: "moderate",
+                priceDisplay: "$25"
+            },
+            {
+                id: 8,
+                title: "Byblos International Fishing",
+                category: "Fishing",
+                location: "Byblos",
+                date: "Dec 2, 2026",
+                time: "5:00 AM",
+                image: "https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+                description: "Deep sea fishing competition with prizes for biggest catch. Equipment provided.",
+                registered: 45,
+                capacity: 60,
+                venue: "Byblos Fishing Port",
+                exactLocation: "Byblos Fishing Port, Main Harbor",
+                coordinates: [34.1210, 35.6470],
+                price: 100,
+                priceType: "premium",
+                priceDisplay: "$100 per boat"
+            },
+            
+            // SIDON EVENTS
+            {
+                id: 9,
+                title: "Sidon Beach Volleyball Championship",
+                category: "Volleyball",
+                location: "Sidon",
+                date: "Dec 2, 2026",
+                time: "9:00 AM",
+                image: "https://images.unsplash.com/photo-1592656094267-764a5c1fe1af?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+                description: "2-day beach volleyball tournament at Sidon's public beach. Open to amateur and semi-pro teams.",
+                registered: 24,
+                capacity: 32,
+                venue: "Sidon Public Beach",
+                exactLocation: "Sidon Corniche, Public Beach Area",
+                coordinates: [33.5631, 35.3689],
+                price: 50,
+                priceType: "moderate",
+                priceDisplay: "$50 per team"
+            },
+            {
+                id: 10,
+                title: "Sidon Sea Kayaking Adventure",
+                category: "Kayaking",
+                location: "Sidon",
+                date: "Dec 9, 2026",
+                time: "8:00 AM",
+                image: "https://images.unsplash.com/photo-1506929562872-bb421503ef21?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+                description: "Guided sea kayaking tour along Sidon's historic coastline. All equipment provided.",
+                registered: 18,
+                capacity: 30,
+                venue: "Sidon Sea Castle",
+                exactLocation: "Sidon Sea Castle Beach",
+                coordinates: [33.5650, 35.3700],
+                price: 35,
+                priceType: "moderate",
+                priceDisplay: "$35"
+            },
+            
+            // TYRE EVENTS
+            {
+                id: 11,
+                title: "Tyre Coastal Triathlon",
+                category: "Triathlon",
+                location: "Tyre",
+                date: "Dec 16, 2026",
+                time: "7:00 AM",
+                image: "https://images.unsplash.com/photo-1560279966-8ff2f6c7407a?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+                description: "Swim, bike, run along Tyre's beautiful UNESCO coastline. Sprint and Olympic distances available.",
+                registered: 95,
+                capacity: 200,
+                venue: "Tyre Beach",
+                exactLocation: "Tyre Public Beach, Starting Point",
+                coordinates: [33.2705, 35.2031],
+                price: 75,
+                priceType: "premium",
+                priceDisplay: "$75"
+            },
+            {
+                id: 12,
+                title: "Tyre Traditional Rowing Race",
+                category: "Rowing",
+                location: "Tyre",
+                date: "Dec 3, 2026",
+                time: "10:00 AM",
+                image: "https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+                description: "Traditional wooden boat rowing competition in Tyre's harbor. Cultural heritage event.",
+                registered: 12,
+                capacity: 20,
+                venue: "Tyre Fishing Port",
+                exactLocation: "Tyre Fishing Port, South Lebanon",
+                coordinates: [33.2720, 35.2050],
+                price: 0,
+                priceType: "free",
+                priceDisplay: "FREE to watch"
+            },
+            
+            // BAAALBEK EVENTS
+            {
+                id: 13,
+                title: "Baalbek Historic Cycling Race",
+                category: "Cycling",
+                location: "Baalbek",
+                date: "Nov 30, 2026",
+                time: "8:30 AM",
+                image: "https://images.unsplash.com/photo-1486428128344-5413e434ad35?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+                description: "Cycling race through Baalbek's historic Roman temple routes. Choose from 40km or 80km routes.",
+                registered: 85,
+                capacity: 150,
+                venue: "Baalbek Temples",
+                exactLocation: "Starting at Temple of Jupiter, Baalbek",
+                coordinates: [34.0058, 36.2181],
+                price: 30,
+                priceType: "moderate",
+                priceDisplay: "$30"
+            },
+            {
+                id: 14,
+                title: "Baalbek Horseback Riding Tour",
+                category: "Equestrian",
+                location: "Baalbek",
+                date: "Dec 17, 2026",
+                time: "9:00 AM",
+                image: "https://images.unsplash.com/photo-1553284965-83fd3e82fa5a?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+                description: "Guided horseback riding tour through Baalbek's countryside. Suitable for all skill levels.",
+                registered: 15,
+                capacity: 25,
+                venue: "Baalbek Equestrian Center",
+                exactLocation: "Baalbek Equestrian Center, Bekaa Valley",
+                coordinates: [34.0100, 36.2200],
+                price: 50,
+                priceType: "moderate",
+                priceDisplay: "$50"
+            },
+            
+            // JOUNIEH EVENTS
+            {
+                id: 15,
+                title: "Jounieh Paragliding Festival",
+                category: "Air Sports",
+                location: "Jounieh",
+                date: "Dec 3, 2026",
+                time: "10:00 AM",
+                image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+                description: "Annual paragliding festival with competitions and tandem flights over Jounieh Bay.",
+                registered: 45,
+                capacity: 80,
+                venue: "Harissa Mountain",
+                exactLocation: "Takeoff from Harissa, Landing at Jounieh Bay",
+                coordinates: [33.9808, 35.6175],
+                price: 100,
+                priceType: "premium",
+                priceDisplay: "$100"
+            },
+            {
+                id: 16,
+                title: "Jounieh Jet Ski Competition",
+                category: "Water Sports",
+                location: "Jounieh",
+                date: "Dec 10, 2026",
+                time: "11:00 AM",
+                image: "https://images.unsplash.com/photo-1519681393784-d120267933ba?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+                description: "Jet ski racing competition in Jounieh Bay. Multiple speed categories available.",
+                registered: 22,
+                capacity: 40,
+                venue: "Jounieh Bay",
+                exactLocation: "Jounieh Bay Waterfront",
+                coordinates: [33.9820, 35.6150],
+                price: 75,
+                priceType: "premium",
+                priceDisplay: "$75"
+            },
+            
+            // FARAYA EVENTS
+            {
+                id: 17,
+                title: "Faraya Ski Championship",
+                category: "Winter Sports",
+                location: "Faraya",
+                date: "Dec 20, 2026",
+                time: "9:00 AM",
+                image: "https://images.unsplash.com/photo-1551632811-561732d1e306?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+                description: "Ski and snowboard competitions at Lebanon's premier ski resort. Multiple skill levels.",
+                registered: 120,
+                capacity: 200,
+                venue: "Mzaar Ski Resort",
+                exactLocation: "Mzaar Ski Resort, Faraya",
+                coordinates: [33.9667, 35.8667],
+                price: 120,
+                priceType: "premium",
+                priceDisplay: "$120"
+            },
+            {
+                id: 18,
+                title: "Faraya Snowshoeing Adventure",
+                category: "Hiking",
+                location: "Faraya",
+                date: "Dec 27, 2026",
+                time: "8:00 AM",
+                image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+                description: "Guided snowshoeing tour through Faraya's winter wonderland. Snowshoes provided.",
+                registered: 30,
+                capacity: 50,
+                venue: "Mzaar Ski Resort",
+                exactLocation: "Mzaar Ski Resort Base",
+                coordinates: [33.9680, 35.8680],
+                price: 40,
+                priceType: "moderate",
+                priceDisplay: "$40"
+            },
+            
+            // OTHER LOCATIONS
+            {
+                id: 19,
+                title: "Zahle Cycling Marathon",
+                category: "Cycling",
+                location: "Zahle",
+                date: "Dec 23, 2026",
+                time: "7:00 AM",
+                image: "https://images.unsplash.com/photo-1511994717241-8e4e484dfa8f?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+                description: "100km cycling marathon through the Bekaa Valley vineyards. Support stations every 20km.",
+                registered: 75,
+                capacity: 200,
+                venue: "Zahle Main Square",
+                exactLocation: "Starting at Al Midan Square, Zahle",
+                coordinates: [33.8467, 35.9020],
+                price: 35,
+                priceType: "moderate",
+                priceDisplay: "$35"
+            },
+            {
+                id: 20,
+                title: "Batroun Stand-up Paddleboarding",
+                category: "Water Sports",
+                location: "Batroun",
+                date: "Dec 9, 2026",
+                time: "8:00 AM",
+                image: "https://images.unsplash.com/photo-1584696049838-8a4dac5627b0?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+                description: "Stand-up paddleboarding session along Batroun's rocky coast. Instruction provided for beginners.",
+                registered: 25,
+                capacity: 40,
+                venue: "Batroun Beach",
+                exactLocation: "Batroun Public Beach",
+                coordinates: [34.2553, 35.6578],
+                price: 30,
+                priceType: "moderate",
+                priceDisplay: "$30"
+            },
+            {
+                id: 21,
+                title: "Community Football - All Ages",
+                category: "Football",
+                location: "Beirut",
+                date: "Every Saturday",
+                time: "3:00 PM",
+                image: "https://images.unsplash.com/photo-1522778119026-d647f0596c20?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+                description: "Weekly community football for all ages and skill levels. Fun, friendly matches.",
+                registered: 45,
+                capacity: 100,
+                venue: "Beirut Sports City",
+                exactLocation: "Beirut Sports City Fields",
+                coordinates: [33.8760, 35.5200],
+                price: 0,
+                priceType: "free",
+                priceDisplay: "FREE"
+            },
+            {
+                id: 22,
+                title: "Sunrise Yoga by the Sea",
+                category: "Yoga",
+                location: "Byblos",
+                date: "Every Sunday",
+                time: "6:00 AM",
+                image: "https://images.unsplash.com/photo-1599901860904-17e6ed7083a0?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+                description: "Weekly sunrise yoga sessions overlooking the Mediterranean. Mats provided.",
+                registered: 35,
+                capacity: 60,
+                venue: "Byblos Cliffside",
+                exactLocation: "Cliffside overlooking Byblos Harbor",
+                coordinates: [34.1250, 35.6450],
+                price: 10,
+                priceType: "budget",
+                priceDisplay: "$10"
+            }
+        ];
+
+        // App State
+        let currentUser = null;
+        let registeredEvents = JSON.parse(localStorage.getItem('registeredEvents')) || [];
+        let currentLocationFilter = 'all';
+        let currentPriceFilter = 'all';
+        let map = null;
+        let markers = [];
+
+        // DOM Elements
+        const eventsGrid = document.getElementById('eventsGrid');
+        const registeredEventsContainer = document.getElementById('registeredEvents');
+        const eventsCount = document.getElementById('eventsCount');
+        const noEventsMessage = document.getElementById('noEventsMessage');
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        const priceFilterButtons = document.querySelectorAll('.price-filter-btn');
+        const signInBtn = document.getElementById('signInBtn');
+        const signUpBtn = document.getElementById('signUpBtn');
+        const signInModal = document.getElementById('signInModal');
+        const signUpModal = document.getElementById('signUpModal');
+        const closeSignIn = document.getElementById('closeSignIn');
+        const closeSignUp = document.getElementById('closeSignUp');
+        const showSignUp = document.getElementById('showSignUp');
+        const showSignIn = document.getElementById('showSignIn');
+        const signInForm = document.getElementById('signInForm');
+        const signUpForm = document.getElementById('signUpForm');
+        const chatbotBtn = document.getElementById('chatbotBtn');
+        const chatbotWindow = document.getElementById('chatbotWindow');
+        const closeChatbot = document.getElementById('closeChatbot');
+        const chatInput = document.getElementById('chatInput');
+        const sendChat = document.getElementById('sendChat');
+        const chatbotMessages = document.getElementById('chatbotMessages');
+        const exploreEventsBtn = document.getElementById('exploreEvents');
+        const showAllBtn = document.getElementById('showAll');
+        const showRegisteredBtn = document.getElementById('showRegistered');
+        const locateMeBtn = document.getElementById('locateMe');
+        const mapSearch = document.getElementById('mapSearch');
+        const searchBtn = document.getElementById('searchBtn');
+        const freeEventsCount = document.getElementById('freeEventsCount');
+        const avgPrice = document.getElementById('avgPrice');
+        const eventsUnder20 = document.getElementById('eventsUnder20');
+        const totalValue = document.getElementById('totalValue');
+
+        // Initialize App
+        function initApp() {
+            initMap();
+            updatePriceStats();
+            displayEvents();
+            displayRegisteredEvents();
+            setupEventListeners();
+            
+            // Auto-login for demo
+            if (!currentUser) {
+                currentUser = {
+                    name: "Demo User",
+                    email: "demo@example.com"
+                };
+                signInBtn.textContent = currentUser.name;
+                signUpBtn.textContent = "Logout";
+            }
+        }
+
+        // Update Price Statistics
+        function updatePriceStats() {
+            // Count free events
+            const freeEvents = sportsEvents.filter(event => event.price === 0);
+            freeEventsCount.textContent = freeEvents.length;
+            
+            // Calculate average price
+            const totalPrice = sportsEvents.reduce((sum, event) => sum + event.price, 0);
+            const averagePrice = totalPrice / sportsEvents.length;
+            avgPrice.textContent = `$${Math.round(averagePrice)}`;
+            
+            // Count events under $20
+            const under20 = sportsEvents.filter(event => event.price < 20 && event.price > 0);
+            eventsUnder20.textContent = under20.length;
+            
+            // Calculate total value of registered events
+            const registeredTotal = registeredEvents.reduce((sum, reg) => {
+                const event = sportsEvents.find(e => e.id === reg.id);
+                return event ? sum + event.price : sum;
+            }, 0);
+            totalValue.textContent = `$${registeredTotal}`;
+        }
+
+        // Initialize Map
+        function initMap() {
+            // Create map centered on Lebanon
+            map = L.map('lebanonMap').setView([33.8547, 35.8623], 9);
+            
+            // Add OpenStreetMap tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 18
+            }).addTo(map);
+            
+            // Add all event markers
+            addAllEventMarkers();
+            
+            // Add legend
+            addMapLegend();
+        }
+
+        // Add event markers to map
+        function addAllEventMarkers() {
+            // Clear existing markers
+            markers.forEach(marker => map.removeLayer(marker));
+            markers = [];
+            
+            // Define colors for different price types
+            const priceColors = {
+                'free': '#2196F3',
+                'budget': '#4CAF50',
+                'moderate': '#FF9800',
+                'premium': '#9C27B0'
+            };
+            
+            // Define icons for different sports
+            const categoryIcons = {
+                'Running': 'running',
+                'Football': 'futbol',
+                'Basketball': 'basketball-ball',
+                'Yoga': 'spa',
+                'Tennis': 'table-tennis',
+                'Wrestling': 'dumbbell',
+                'Fishing': 'fish',
+                'Volleyball': 'volleyball-ball',
+                'Kayaking': 'ship',
+                'Triathlon': 'swimmer',
+                'Rowing': 'water',
+                'Cycling': 'bicycle',
+                'Equestrian': 'horse',
+                'Air Sports': 'parachute-box',
+                'Water Sports': 'water',
+                'Winter Sports': 'skiing',
+                'Hiking': 'hiking'
+            };
+            
+            sportsEvents.forEach(event => {
+                const isRegistered = registeredEvents.some(reg => reg.id === event.id);
+                
+                // Create custom icon based on price
+                const icon = L.divIcon({
+                    html: `<div style="
+                        background-color: ${priceColors[event.priceType] || '#2c3e50'};
+                        width: ${isRegistered ? '35px' : '30px'};
+                        height: ${isRegistered ? '35px' : '30px'};
+                        border-radius: 50%;
+                        border: 3px solid white;
+                        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        color: white;
+                        font-size: ${isRegistered ? '16px' : '14px'};
+                        position: relative;
+                    ">
+                        <i class="fas fa-${categoryIcons[event.category] || 'map-marker-alt'}"></i>
+                        ${isRegistered ? 
+                            '<div style="position:absolute; top:-5px; right:-5px; background:white; color:#4CAF50; border-radius:50%; width:15px; height:15px; display:flex; align-items:center; justify-content:center; font-size:10px;"><i class="fas fa-check"></i></div>' 
+                            : ''
+                        }
+                    </div>`,
+                    className: 'custom-marker',
+                    iconSize: [isRegistered ? 35 : 30, isRegistered ? 35 : 30],
+                    iconAnchor: [isRegistered ? 17.5 : 15, isRegistered ? 17.5 : 15]
+                });
+                
+                // Create marker
+                const marker = L.marker(event.coordinates, { icon: icon })
+                    .addTo(map)
+                    .bindPopup(createEventPopup(event));
+                
+                markers.push(marker);
+                
+                // Add click event
+                marker.on('click', function() {
+                    highlightEventCard(event.id);
+                });
+            });
+        }
+
+        // Create popup content for events
+        function createEventPopup(event) {
+            const isRegistered = registeredEvents.some(reg => reg.id === event.id);
+            
+            return `
+                <div class="map-popup">
+                    ${isRegistered ? 
+                        '<div style="background:#4CAF50; color:white; padding:5px; border-radius:5px; margin-bottom:10px; text-align:center; font-weight:bold;"><i class="fas fa-check"></i> You are registered</div>' 
+                        : ''
+                    }
+                    <span class="category">${event.category}</span>
+                    <h3>${event.title}</h3>
+                    <div class="map-popup-price">
+                        <i class="fas fa-tag"></i> Price: ${event.price === 0 ? '<strong style="color:#2196F3;">FREE</strong>' : '<strong style="color:#e74c3c;">' + event.priceDisplay + '</strong>'}
+                    </div>
+                    <p><i class="fas fa-calendar-alt"></i> ${event.date} at ${event.time}</p>
+                    <p><i class="fas fa-map-marker-alt"></i> ${event.venue}</p>
+                    <p><i class="fas fa-users"></i> ${event.registered}/${event.capacity} registered</p>
+                    <button onclick="${isRegistered ? 'cancelRegistration(' + event.id + ')' : 'registerForEvent(' + event.id + ')'}" 
+                            style="background:${isRegistered ? '#ff6b6b' : 'var(--primary)'}; color:white; border:none; padding:8px; border-radius:4px; width:100%; margin-top:10px; cursor:pointer;">
+                        ${isRegistered ? 'Cancel Registration' : 'Register Now'}
+                    </button>
+                    <button onclick="centerMapOnEvent(${event.id})" 
+                            style="background:var(--secondary); color:white; border:none; padding:8px; border-radius:4px; width:100%; margin-top:5px; cursor:pointer;">
+                        <i class="fas fa-search"></i> View Details
+                    </button>
+                </div>
+            `;
+        }
+
+        // Add map legend
+        function addMapLegend() {
+            const legend = L.control({ position: 'bottomright' });
+            
+            legend.onAdd = function(map) {
+                const div = L.DomUtil.create('div', 'map-legend');
+                div.innerHTML = `
+                    <h4 style="margin-bottom:10px;">Price Categories</h4>
+                    <div class="legend-item"><div class="legend-color" style="background:#2196F3;"></div>Free Events</div>
+                    <div class="legend-item"><div class="legend-color" style="background:#4CAF50;"></div>Budget ($1-$20)</div>
+                    <div class="legend-item"><div class="legend-color" style="background:#FF9800;"></div>Moderate ($21-$50)</div>
+                    <div class="legend-item"><div class="legend-color" style="background:#9C27B0;"></div>Premium ($51+)</div>
+                `;
+                return div;
+            };
+            
+            legend.addTo(map);
+        }
+
+        // Center map on specific event
+        function centerMapOnEvent(eventId) {
+            const event = sportsEvents.find(e => e.id === eventId);
+            if (event) {
+                map.setView(event.coordinates, 13);
+                
+                // Find and open marker popup
+                markers.forEach(marker => {
+                    const markerLatLng = marker.getLatLng();
+                    if (markerLatLng.lat === event.coordinates[0] && markerLatLng.lng === event.coordinates[1]) {
+                        marker.openPopup();
+                    }
+                });
+                
+                // Scroll to event section
+                document.getElementById('events').scrollIntoView({ behavior: 'smooth' });
+                
+                // Highlight event card
+                highlightEventCard(eventId);
+            }
+        }
+
+        // Highlight event card in grid
+        function highlightEventCard(eventId) {
+            // Remove previous highlights
+            document.querySelectorAll('.event-card').forEach(card => {
+                card.style.boxShadow = 'var(--card-shadow)';
+            });
+            
+            // Highlight the card
+            const eventCard = document.querySelector(`.event-card button[data-id="${eventId}"]`)?.closest('.event-card');
+            if (eventCard) {
+                eventCard.style.boxShadow = '0 0 0 3px var(--primary), 0 15px 30px rgba(0,0,0,0.2)';
+                eventCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        // Show only registered events on map
+        function showRegisteredOnMap() {
+            markers.forEach(marker => {
+                const event = sportsEvents.find(e => 
+                    e.coordinates[0] === marker.getLatLng().lat && 
+                    e.coordinates[1] === marker.getLatLng().lng
+                );
+                
+                if (event && registeredEvents.some(reg => reg.id === event.id)) {
+                    map.addLayer(marker);
+                } else {
+                    map.removeLayer(marker);
+                }
+            });
+        }
+
+        // Display Events with filters
+        function displayEvents() {
+            eventsGrid.innerHTML = '';
+            
+            let filteredEvents = sportsEvents;
+            
+            // Apply location filter
+            if (currentLocationFilter !== 'all') {
+                filteredEvents = filteredEvents.filter(event => event.location.toLowerCase() === currentLocationFilter);
+            }
+            
+            // Apply price filter
+            if (currentPriceFilter !== 'all') {
+                switch(currentPriceFilter) {
+                    case 'free':
+                        filteredEvents = filteredEvents.filter(event => event.price === 0);
+                        break;
+                    case 'budget':
+                        filteredEvents = filteredEvents.filter(event => event.price > 0 && event.price <= 20);
+                        break;
+                    case 'moderate':
+                        filteredEvents = filteredEvents.filter(event => event.price > 20 && event.price <= 50);
+                        break;
+                    case 'premium':
+                        filteredEvents = filteredEvents.filter(event => event.price > 50);
+                        break;
+                }
+            }
+            
+            if (filteredEvents.length === 0) {
+                eventsGrid.innerHTML = `
+                    <div style="grid-column: 1/-1; text-align: center; padding: 40px;">
+                        <h3>No events found</h3>
+                        <p>Try selecting different filters</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            filteredEvents.forEach(event => {
+                const isRegistered = registeredEvents.some(reg => reg.id === event.id);
+                
+                // Determine price class
+                let priceClass = 'price-moderate';
+                if (event.price === 0) priceClass = 'price-free';
+                else if (event.price <= 20) priceClass = 'price-budget';
+                else if (event.price > 50) priceClass = 'price-premium';
+                
+                const eventCard = document.createElement('div');
+                eventCard.className = `event-card ${isRegistered ? 'registered' : ''}`;
+                eventCard.innerHTML = `
+                    <img src="${event.image}" alt="${event.title}" class="event-image">
+                    <div class="event-content">
+                        <div style="display:flex; justify-content:space-between; align-items:start;">
+                            <span class="event-category">${event.category}</span>
+                            <span class="price-tag ${priceClass}">${event.price === 0 ? 'FREE' : event.priceDisplay}</span>
+                        </div>
+                        <h3 class="event-title">${event.title}</h3>
+                        <div class="event-meta">
+                            <div><i class="fas fa-map-marker-alt"></i> ${event.location}</div>
+                            <div><i class="fas fa-calendar-alt"></i> ${event.date}</div>
+                            <div><i class="fas fa-clock"></i> ${event.time}</div>
+                        </div>
+                        
+                        <div class="event-price">
+                            <div class="price-label">Registration Fee:</div>
+                            <div class="price-amount">${event.price === 0 ? 'FREE' : event.priceDisplay}</div>
+                        </div>
+                        
+                        <p class="event-description">${event.description}</p>
+                        <div class="event-location">
+                            <i class="fas fa-map-pin"></i>
+                            <span>${event.venue}</span>
+                        </div>
+                        <div class="event-actions">
+                            <button class="register-btn ${isRegistered ? 'registered' : ''}" 
+                                    data-id="${event.id}">
+                                ${isRegistered ? 'REGISTERED' : 
+                                  (event.registered >= event.capacity ? 'FULL' : 'REGISTER NOW')}
+                            </button>
+                            <button class="view-map-btn" 
+                                    onclick="centerMapOnEvent(${event.id})">
+                                <i class="fas fa-map-marker-alt"></i> View on Map
+                            </button>
+                        </div>
+                    </div>
+                `;
+                eventsGrid.appendChild(eventCard);
+            });
+            
+            // Add event listeners to register buttons
+            document.querySelectorAll('.register-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const eventId = parseInt(this.getAttribute('data-id'));
+                    if (this.classList.contains('registered')) {
+                        cancelRegistration(eventId);
+                    } else {
+                        registerForEvent(eventId);
+                    }
+                });
+            });
+        }
+
+        // Display Registered Events
+        function displayRegisteredEvents() {
+            registeredEventsContainer.innerHTML = '';
+            
+            if (registeredEvents.length === 0) {
+                noEventsMessage.style.display = 'block';
+                eventsCount.textContent = '0 Events';
+                return;
+            }
+            
+            noEventsMessage.style.display = 'none';
+            eventsCount.textContent = `${registeredEvents.length} Event${registeredEvents.length > 1 ? 's' : ''}`;
+            
+            registeredEvents.forEach(reg => {
+                const event = sportsEvents.find(e => e.id === reg.id);
+                if (!event) return;
+                
+                const eventCard = document.createElement('div');
+                eventCard.className = 'registered-card';
+                eventCard.innerHTML = `
+                    <div class="registered-badge">
+                        <i class="fas fa-check-circle"></i> Registered
+                    </div>
+                    <img src="${event.image}" alt="${event.title}" class="event-image">
+                    <div class="event-content">
+                        <div style="display:flex; justify-content:space-between; align-items:start;">
+                            <span class="event-category">${event.category}</span>
+                            <span class="price-tag ${event.price === 0 ? 'price-free' : (event.price <= 20 ? 'price-budget' : (event.price <= 50 ? 'price-moderate' : 'price-premium'))}">
+                                ${event.price === 0 ? 'FREE' : event.priceDisplay}
+                            </span>
+                        </div>
+                        <h3 class="event-title">${event.title}</h3>
+                        <div class="event-meta">
+                            <div><i class="fas fa-calendar-alt"></i> ${event.date}</div>
+                            <div><i class="fas fa-clock"></i> ${event.time}</div>
+                            <div><i class="fas fa-map-marker-alt"></i> ${event.location}</div>
+                        </div>
+                        <div class="event-location">
+                            <i class="fas fa-map-pin"></i>
+                            <span>${event.exactLocation}</span>
+                        </div>
+                        <div class="registered-actions">
+                            <button class="directions-btn" 
+                                    onclick="centerMapOnEvent(${event.id})">
+                                <i class="fas fa-map-marker-alt"></i> View on Map
+                            </button>
+                            <button class="cancel-btn" onclick="cancelRegistration(${event.id})">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                        </div>
+                    </div>
+                `;
+                registeredEventsContainer.appendChild(eventCard);
+            });
+            
+            // Update price statistics
+            updatePriceStats();
+        }
+
+        // Register for Event
+        function registerForEvent(eventId) {
+            if (!currentUser) {
+                alert('Please sign in to register for events');
+                showModal(signInModal);
+                return;
+            }
+            
+            const event = sportsEvents.find(e => e.id === eventId);
+            
+            if (!event) {
+                alert('Event not found');
+                return;
+            }
+            
+            if (event.registered >= event.capacity) {
+                alert('This event is full');
+                return;
+            }
+            
+            if (registeredEvents.some(reg => reg.id === eventId)) {
+                alert('You are already registered for this event');
+                return;
+            }
+            
+            // Update event count
+            event.registered++;
+            
+            // Add to registered events
+            registeredEvents.push({
+                id: eventId,
+                registrationDate: new Date().toLocaleDateString(),
+                registrationId: 'REG' + Date.now().toString().slice(-6)
+            });
+            
+            // Save to localStorage
+            localStorage.setItem('registeredEvents', JSON.stringify(registeredEvents));
+            
+            // Update displays
+            displayEvents();
+            displayRegisteredEvents();
+            
+            // Update map markers
+            addAllEventMarkers();
+            
+            // Show confirmation with price
+            const priceMessage = event.price === 0 ? 
+                `Successfully registered for FREE event "${event.title}"!` :
+                `Successfully registered for "${event.title}"! Price: ${event.priceDisplay}`;
+            alert(priceMessage);
+            
+            // Add chatbot message
+            addChatMessage('bot', `You've registered for ${event.title} on ${event.date} for ${event.price === 0 ? 'FREE' : event.priceDisplay}. It's been added to your events!`);
+        }
+
+        // Cancel Registration
+        function cancelRegistration(eventId) {
+            if (!confirm('Are you sure you want to cancel your registration?')) {
+                return;
+            }
+            
+            const event = sportsEvents.find(e => e.id === eventId);
+            
+            if (!event) {
+                alert('Event not found');
+                return;
+            }
+            
+            // Update event count
+            event.registered = Math.max(0, event.registered - 1);
+            
+            // Remove from registered events
+            registeredEvents = registeredEvents.filter(reg => reg.id !== eventId);
+            
+            // Save to localStorage
+            localStorage.setItem('registeredEvents', JSON.stringify(registeredEvents));
+            
+            // Update displays
+            displayEvents();
+            displayRegisteredEvents();
+            
+            // Update map markers
+            addAllEventMarkers();
+            
+            // Show confirmation
+            alert(`Registration for "${event.title}" has been cancelled.`);
+            
+            // Add chatbot message
+            addChatMessage('bot', `Your registration for ${event.title} has been cancelled.`);
+        }
+
+        // Setup Event Listeners
+        function setupEventListeners() {
+            // Location filter buttons
+            filterButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    filterButtons.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentLocationFilter = this.getAttribute('data-location');
+                    displayEvents();
+                });
+            });
+            
+            // Price filter buttons
+            priceFilterButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    priceFilterButtons.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentPriceFilter = this.getAttribute('data-price');
+                    displayEvents();
+                });
+            });
+            
+            // Map control buttons
+            showAllBtn.addEventListener('click', function() {
+                showAllBtn.classList.add('active');
+                showRegisteredBtn.classList.remove('active');
+                addAllEventMarkers();
+            });
+            
+            showRegisteredBtn.addEventListener('click', function() {
+                showAllBtn.classList.remove('active');
+                showRegisteredBtn.classList.add('active');
+                showRegisteredOnMap();
+            });
+            
+            locateMeBtn.addEventListener('click', function() {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(function(position) {
+                        map.setView([position.coords.latitude, position.coords.longitude], 12);
+                        addChatMessage('bot', 'Found your location! Showing events near you on the map.');
+                    }, function() {
+                        alert('Unable to get your location. Please check your browser settings.');
+                    });
+                } else {
+                    alert('Geolocation is not supported by your browser.');
+                }
+            });
+            
+            // Map search
+            searchBtn.addEventListener('click', searchMap);
+            mapSearch.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') searchMap();
+            });
+            
+            // Auth modals
+            signInBtn.addEventListener('click', () => {
+                if (currentUser) {
+                    handleLogout();
+                } else {
+                    showModal(signInModal);
+                }
+            });
+            
+            signUpBtn.addEventListener('click', () => {
+                if (currentUser) {
+                    handleLogout();
+                } else {
+                    showModal(signUpModal);
+                }
+            });
+            
+            closeSignIn.addEventListener('click', () => hideModal(signInModal));
+            closeSignUp.addEventListener('click', () => hideModal(signUpModal));
+            showSignUp.addEventListener('click', () => {
+                hideModal(signInModal);
+                showModal(signUpModal);
+            });
+            showSignIn.addEventListener('click', () => {
+                hideModal(signUpModal);
+                showModal(signInModal);
+            });
+            
+            // Form submissions
+            signInForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const email = document.getElementById('loginEmail').value;
+                const password = document.getElementById('loginPassword').value;
+                
+                if (!email || !password) {
+                    alert('Please fill in all fields');
+                    return;
+                }
+                
+                currentUser = {
+                    name: email.split('@')[0],
+                    email: email
+                };
+                
+                signInBtn.textContent = currentUser.name;
+                signUpBtn.textContent = "Logout";
+                hideModal(signInModal);
+                alert(`Welcome back, ${currentUser.name}!`);
+                
+                this.reset();
+            });
+            
+            signUpForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const name = document.getElementById('signupName').value;
+                const email = document.getElementById('signupEmail').value;
+                const password = document.getElementById('signupPassword').value;
+                
+                if (!name || !email || !password) {
+                    alert('Please fill in all fields');
+                    return;
+                }
+                
+                if (password.length < 6) {
+                    alert('Password must be at least 6 characters');
+                    return;
+                }
+                
+                currentUser = {
+                    name: name,
+                    email: email
+                };
+                
+                signInBtn.textContent = currentUser.name;
+                signUpBtn.textContent = "Logout";
+                hideModal(signUpModal);
+                alert(`Welcome to Lebanon Sports Hub, ${currentUser.name}!`);
+                
+                this.reset();
+            });
+            
+            // Chatbot
+            chatbotBtn.addEventListener('click', () => {
+                chatbotWindow.style.display = chatbotWindow.style.display === 'flex' ? 'none' : 'flex';
+            });
+            
+            closeChatbot.addEventListener('click', () => {
+                chatbotWindow.style.display = 'none';
+            });
+            
+            sendChat.addEventListener('click', sendChatMessage);
+            chatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendChatMessage();
+            });
+            
+            // Explore events button
+            exploreEventsBtn.addEventListener('click', () => {
+                document.getElementById('map').scrollIntoView({ behavior: 'smooth' });
+            });
+            
+            // Close modals on outside click
+            window.addEventListener('click', (e) => {
+                if (e.target === signInModal) hideModal(signInModal);
+                if (e.target === signUpModal) hideModal(signUpModal);
+            });
+        }
+
+        // Map search function
+        function searchMap() {
+            const query = mapSearch.value.toLowerCase().trim();
+            if (!query) return;
+            
+            // Search for locations
+            const locationMap = {
+                'beirut': [33.8938, 35.5018],
+                'tripoli': [34.4367, 35.8497],
+                'byblos': [34.1191, 35.6497],
+                'jbeil': [34.1191, 35.6497],
+                'sidon': [33.5631, 35.3689],
+                'saida': [33.5631, 35.3689],
+                'tyre': [33.2705, 35.2031],
+                'baalbek': [34.0058, 36.2181],
+                'jounieh': [33.9808, 35.6175],
+                'faraya': [33.9667, 35.8667],
+                'mzaar': [33.9667, 35.8667],
+                'zahle': [33.8467, 35.9020],
+                'batroun': [34.2553, 35.6578]
+            };
+            
+            if (locationMap[query]) {
+                map.setView(locationMap[query], 12);
+                addChatMessage('bot', `Showing events in ${query.charAt(0).toUpperCase() + query.slice(1)}. Use the filters to see specific events.`);
+            } else if (query.includes('free') || query.includes('no cost')) {
+                addChatMessage('bot', `There are ${sportsEvents.filter(e => e.price === 0).length} FREE events available. Use the "Free Events" price filter to see them all.`);
+            } else if (query.includes('cheap') || query.includes('budget') || query.includes('affordable')) {
+                addChatMessage('bot', `There are ${sportsEvents.filter(e => e.price > 0 && e.price <= 20).length} budget-friendly events under $20. Use the "Budget" price filter.`);
+            } else {
+                addChatMessage('bot', `Searching for "${query}"... Try searching for a city or use the price filters to find events in your budget.`);
+            }
+        }
+
+        // Handle Logout
+        function handleLogout() {
+            currentUser = null;
+            signInBtn.textContent = 'Sign In';
+            signUpBtn.textContent = 'Sign Up';
+            alert('You have been logged out');
+            addChatMessage('bot', 'You have been logged out. Your registered events are saved for when you sign back in.');
+        }
+
+        // Modal functions
+        function showModal(modal) {
+            modal.style.display = 'flex';
+        }
+        
+        function hideModal(modal) {
+            modal.style.display = 'none';
+        }
+
+        // Chatbot functions
+        function sendChatMessage() {
+            const message = chatInput.value.trim();
+            if (!message) return;
+            
+            addChatMessage('user', message);
+            chatInput.value = '';
+            
+            setTimeout(() => {
+                const response = getChatbotResponse(message);
+                addChatMessage('bot', response);
+            }, 500);
+        }
+        
+        function addChatMessage(sender, text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            messageDiv.textContent = text;
+            chatbotMessages.appendChild(messageDiv);
+            chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+        }
+        
+        function getChatbotResponse(message) {
+            const lowerMsg = message.toLowerCase();
+            
+            if (lowerMsg.includes('hello') || lowerMsg.includes('hi')) {
+                return `Hello${currentUser ? ' ' + currentUser.name : ''}! I can help you find events by price, location, or sport. Ask me about free events, budget options, or premium experiences!`;
+            }
+            else if (lowerMsg.includes('price') || lowerMsg.includes('cost') || lowerMsg.includes('expensive') || lowerMsg.includes('cheap')) {
+                const freeCount = sportsEvents.filter(e => e.price === 0).length;
+                const budgetCount = sportsEvents.filter(e => e.price > 0 && e.price <= 20).length;
+                const moderateCount = sportsEvents.filter(e => e.price > 20 && e.price <= 50).length;
+                const premiumCount = sportsEvents.filter(e => e.price > 50).length;
+                
+                return `Price breakdown: ${freeCount} FREE events, ${budgetCount} budget ($1-$20), ${moderateCount} moderate ($21-$50), ${premiumCount} premium ($51+). Use the price filters to browse!`;
+            }
+            else if (lowerMsg.includes('free') || lowerMsg.includes('no cost')) {
+                const freeEvents = sportsEvents.filter(e => e.price === 0);
+                return `There are ${freeEvents.length} FREE events including: ${freeEvents.slice(0, 3).map(e => e.title).join(', ')}. Use the "Free Events" filter to see all free options.`;
+            }
+            else if (lowerMsg.includes('budget') || lowerMsg.includes('affordable') || lowerMsg.includes('cheap')) {
+                const budgetEvents = sportsEvents.filter(e => e.price > 0 && e.price <= 20);
+                return `There are ${budgetEvents.length} budget-friendly events under $20. Use the "Budget" filter to see affordable options like community sports and local tournaments.`;
+            }
+            else if (lowerMsg.includes('register') || lowerMsg.includes('sign up')) {
+                return `To register: 1) Click on a map marker or event card 2) Click "Register Now" 3) You need to be signed in. You have ${registeredEvents.length} registered events worth $${registeredEvents.reduce((sum, reg) => {
+                    const event = sportsEvents.find(e => e.id === reg.id);
+                    return event ? sum + event.price : sum;
+                }, 0)}.`;
+            }
+            else if (lowerMsg.includes('my event') || lowerMsg.includes('registered')) {
+                const totalValue = registeredEvents.reduce((sum, reg) => {
+                    const event = sportsEvents.find(e => e.id === reg.id);
+                    return event ? sum + event.price : sum;
+                }, 0);
+                return `You have ${registeredEvents.length} registered event${registeredEvents.length !== 1 ? 's' : ''} with total value of $${totalValue}. Check "My Events" section or click "My Events" on the map.`;
+            }
+            else {
+                return `I'm your sports assistant! Ask me about: event prices, free activities, budget options, or use the filters to find events in your price range.`;
+            }
+        }
+
+        // Initialize app on load
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+ 
+<a href="admin-react.html" style="color: white; background: var(--primary); padding: 10px 15px; border-radius: 5px; text-decoration: none;">
+    <i class="fas fa-user-shield"></i> Admin Panel
+</a>
+</body>
+</html>
