@@ -1,2 +1,0 @@
-# Sportsapp
-SportsEventApp
